@@ -1,0 +1,21 @@
+# Session & credentials
+session/
+.env
+
+# Deduplication store
+seen_jobs.json
+
+# Debug artifacts
+debug_screenshot.png
+debug_page.html
+debug_job.html
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# macOS
+.DS_Store
