@@ -2,13 +2,15 @@
 session/
 .env
 
-# Deduplication store
-seen_jobs.json
+# Runtime data
+data/*
+!data/.gitkeep
 
 # Debug artifacts
 debug_screenshot.png
 debug_page.html
 debug_job.html
+debug.py
 
 # Python
 __pycache__/
