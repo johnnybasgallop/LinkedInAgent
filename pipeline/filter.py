@@ -49,8 +49,7 @@ not "could possibly apply".
 _USER_PROMPT_TEMPLATE = """\
 Evaluate the {num_jobs} job postings below against the candidate's {num_resumes} resume \
 variants. The candidate has ~4 years of experience. Score each job 1-10 following the \
-seniority rules and tech stack constraints in the system prompt. \
-Only return jobs scoring {min_score} or higher.
+seniority rules and tech stack constraints in the system prompt.
 
 ## My Resume Variants
 
@@ -63,15 +62,14 @@ Only return jobs scoring {min_score} or higher.
 ## Instructions
 
 Respond with a JSON array only — no markdown, no explanation outside the JSON.
+Score every job — include ALL {num_jobs} jobs in your response, regardless of score.
 Each element should follow this schema exactly:
 {{
   "id": "<job id string>",
   "score": <integer 1-10>,
   "best_resume": "<resume filename stem>",
-  "reason": "<one concise sentence explaining the match>"
+  "reason": "<one concise sentence explaining the match or mismatch>"
 }}
-
-Only include jobs scoring {min_score}+. If no jobs qualify, return an empty array [].
 """
 
 
@@ -108,7 +106,8 @@ def _parse_response(raw: str) -> list[dict]:
 
 def filter_jobs(jobs: list[dict], resumes: dict[str, str]) -> list[dict]:
     """
-    Run all jobs through Claude Haiku and return only strong matches.
+    Run all jobs through Claude Haiku and return ALL jobs with scores attached.
+    Caller is responsible for filtering by score threshold.
     Each returned job dict is enriched with: score, best_resume, reason.
     """
     if not jobs:
@@ -123,7 +122,6 @@ def filter_jobs(jobs: list[dict], resumes: dict[str, str]) -> list[dict]:
     prompt = _USER_PROMPT_TEMPLATE.format(
         num_resumes=len(resumes),
         num_jobs=len(jobs),
-        min_score=_MIN_SCORE,
         resumes_block=_build_resumes_block(resumes),
         jobs_block=_build_jobs_block(jobs),
     )
@@ -132,28 +130,27 @@ def filter_jobs(jobs: list[dict], resumes: dict[str, str]) -> list[dict]:
 
     message = client.messages.create(
         model=_MODEL,
-        max_tokens=2048,
+        max_tokens=8192,
         system=_SYSTEM_PROMPT,
         messages=[{"role": "user", "content": prompt}],
     )
 
     raw = message.content[0].text
-    matches = _parse_response(raw)
+    scores = _parse_response(raw)
 
-    print(f"[Stage 3] {len(matches)} jobs passed the threshold (score >= {_MIN_SCORE}).")
-
-    # Enrich the original job dicts with the LLM's scoring data
-    match_index = {m["id"]: m for m in matches}
-    filtered = []
+    # Enrich every job dict with Claude's scoring data
+    score_index = {s["id"]: s for s in scores}
+    scored = []
     for job in jobs:
-        if job["id"] in match_index:
+        if job["id"] in score_index:
             job.update({
-                "score":       match_index[job["id"]]["score"],
-                "best_resume": match_index[job["id"]]["best_resume"],
-                "reason":      match_index[job["id"]]["reason"],
+                "score":       score_index[job["id"]]["score"],
+                "best_resume": score_index[job["id"]]["best_resume"],
+                "reason":      score_index[job["id"]]["reason"],
             })
-            filtered.append(job)
+            scored.append(job)
 
-    # Sort best matches first
-    filtered.sort(key=lambda j: j["score"], reverse=True)
-    return filtered
+    print(f"[Stage 3] {sum(1 for j in scored if j['score'] >= _MIN_SCORE)}/{len(scored)} jobs scored >= {_MIN_SCORE}.")
+
+    scored.sort(key=lambda j: j["score"], reverse=True)
+    return scored

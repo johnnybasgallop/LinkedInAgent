@@ -12,6 +12,7 @@ import json
 
 from config import OUTPUT_FILE
 from browser.context import create_context, teardown
+from pipeline.cache import filter_uncached, load_cache, save_cache, update_cache
 from pipeline.cards import scrape_job_cards
 from pipeline.descriptions import fetch_all_descriptions
 from pipeline.filter import filter_jobs
@@ -32,14 +33,30 @@ async def run_pipeline() -> None:
             print("No jobs found. Exiting.")
             return
 
-        # Stage 2 — fetch descriptions
-        jobs = await fetch_all_descriptions(page, jobs)
+        # Split early so Stage 2 skips jobs already in cache
+        cache = load_cache()
+        uncached_jobs, cached_hits = filter_uncached(jobs, cache)
+        print(f"[Cache] {len(cached_hits)} job(s) already analysed, {len(uncached_jobs)} new/expired.")
+
+        # Stage 2 — fetch descriptions (only for uncached jobs)
+        uncached_jobs = await fetch_all_descriptions(page, uncached_jobs)
 
     finally:
         await teardown(playwright, browser)
 
-    # Stage 3 — LLM filter
-    matched_jobs = filter_jobs(jobs, resumes)
+    # Stage 3 — LLM filter (cache-aware)
+    if uncached_jobs:
+        all_scored = filter_jobs(uncached_jobs, resumes)
+        update_cache(cache, all_scored)
+        save_cache(cache)
+
+    # Pull all results (new + cached), filter by score threshold for output only
+    _MIN_SCORE = 7
+    all_results = [cache[job["id"]] for job in jobs if job["id"] in cache]
+    matched_jobs = sorted(
+        [j for j in all_results if j["score"] >= _MIN_SCORE],
+        key=lambda x: x["score"], reverse=True
+    )
 
     # Stage 4 — notify (coming soon)
     # notify_jobs(matched_jobs)

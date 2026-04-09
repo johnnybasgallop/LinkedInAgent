@@ -5,6 +5,8 @@ ROOT_DIR       = Path(__file__).parent
 SESSION_STATE  = ROOT_DIR / "session" / "state.json"
 OUTPUT_FILE    = ROOT_DIR / "data" / "jobs.json"
 SEEN_JOBS_FILE = ROOT_DIR / "data" / "seen_jobs.json"
+CACHE_FILE     = ROOT_DIR / "data" / "cache.json"
+CACHE_TTL_DAYS = 30
 RESUMES_DIR    = ROOT_DIR / "resumes"
 
 # Browser
