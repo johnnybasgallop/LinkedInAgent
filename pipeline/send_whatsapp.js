@@ -15,8 +15,8 @@ client.on("qr", (qr) => {
 client.once("ready", async () => {
   console.log("client is ready");
   try {
-    const me = client.info.wid._serialized;
-    await client.sendMessage(me, "testing things out");
+    // const me = client.info.wid._serialized;
+    await client.sendMessage(`${number.replace("+", "")}@c.us`, message);
     console.log("message sent");
   } catch (err) {
     console.error("failed to send message:", err.message);

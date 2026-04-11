@@ -14,4 +14,4 @@ def send_message(phone_number: str, message: str):
         print(e)
 
 if __name__ == "__main__":
-    send_message(phone_number="+447592515298", message="testing yo yo yo")
+    send_message(phone_number="+447592515298", message="This is automated - lol")
