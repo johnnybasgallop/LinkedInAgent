@@ -1,6 +1,9 @@
 # Session & credentials
 session/
 .env
+/node_modules
+/.wwebjs_auth
+/.wwebjs_cache
 
 # Runtime data
 data/*
