@@ -34,11 +34,19 @@ def _handle_applied(job_id: str) -> str:
     print(f"  url:      {job.get('url')}")
     print("-" * 60)
 
-    if create_application(job):
-        title = job.get("title") or "position"
+    title = job.get("title") or "position"
+    status = create_application(job)
+
+    if status == "created":
         msg = f"Applied to {title}"
-        return msg if len(msg) <= 200 else msg[:197] + "..."
-    return "Failed to sync with Notion"
+    elif status == "duplicate":
+        msg = f"Already logged: {title}"
+    elif status == "skipped":
+        msg = "Notion not configured"
+    else:
+        msg = "Failed to sync with Notion"
+
+    return msg if len(msg) <= 200 else msg[:197] + "..."
 
 
 def main() -> None:

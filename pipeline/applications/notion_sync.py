@@ -9,6 +9,23 @@ from notion_client import Client
 
 from config import NOTION_DATABASE_ID, NOTION_TOKEN
 
+_DATA_SOURCE_ID: str | None = None
+
+
+def _resolve_data_source_id(notion: Client) -> str | None:
+    global _DATA_SOURCE_ID
+    if _DATA_SOURCE_ID:
+        return _DATA_SOURCE_ID
+    try:
+        db = notion.databases.retrieve(database_id=NOTION_DATABASE_ID)
+        sources = db.get("data_sources") or []
+        if sources:
+            _DATA_SOURCE_ID = sources[0].get("id")
+            return _DATA_SOURCE_ID
+    except Exception as e:
+        print(f"[Notion] failed to resolve data source id: {e}")
+    return None
+
 
 def _infer_location_kind(loc: str) -> str:
     lower = (loc or "").lower()
@@ -25,12 +42,36 @@ def _text(content: str) -> list[dict]:
     return [{"type": "text", "text": {"content": content}}]
 
 
-def create_application(job: dict) -> bool:
-    if not NOTION_TOKEN or not NOTION_DATABASE_ID:
-        print("[Notion] NOTION_TOKEN or NOTION_DATABASE_ID not set — skipping.")
+def _application_exists(notion: Client, url: str) -> bool:
+    if not url:
+        return False
+    data_source_id = _resolve_data_source_id(notion)
+    if not data_source_id:
+        return False
+    try:
+        result = notion.data_sources.query(
+            data_source_id=data_source_id,
+            filter={"property": "JobUrl", "url": {"equals": url}},
+            page_size=1,
+        )
+        return bool(result.get("results"))
+    except Exception as e:
+        print(f"[Notion] duplicate check failed, proceeding with insert: {e}")
         return False
 
+
+def create_application(job: dict) -> str:
+    """Returns 'created', 'duplicate', 'skipped', or 'failed'."""
+    if not NOTION_TOKEN or not NOTION_DATABASE_ID:
+        print("[Notion] NOTION_TOKEN or NOTION_DATABASE_ID not set — skipping.")
+        return "skipped"
+
     notion = Client(auth=NOTION_TOKEN)
+    url = job.get("url") or None
+
+    if _application_exists(notion, url):
+        print(f"[Notion] duplicate: '{job.get('title')} @ {job.get('company')}' already tracked.")
+        return "duplicate"
 
     properties = {
         "Company":      {"title":     _text(job.get("company", ""))},
@@ -40,7 +81,7 @@ def create_application(job: dict) -> bool:
         "Location":     {"select":    {"name": _infer_location_kind(job.get("location", ""))}},
         "Date applied": {"date":      {"start": date.today().isoformat()}},
         "Notes":        {"rich_text": _text(job.get("reason", ""))},
-        "JobUrl":       {"url":       job.get("url") or None},
+        "JobUrl":       {"url":       url},
     }
 
     try:
@@ -49,7 +90,7 @@ def create_application(job: dict) -> bool:
             properties=properties,
         )
         print(f"[Notion] added '{job.get('title')} @ {job.get('company')}'")
-        return True
+        return "created"
     except Exception as e:
         print(f"[Notion] failed to add application: {e}")
-        return False
+        return "failed"
