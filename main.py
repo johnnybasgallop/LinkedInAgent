@@ -4,7 +4,7 @@ main.py — Pipeline orchestrator
 Stage 1 — Scrape job cards from LinkedIn search
 Stage 2 — Fetch full descriptions for each job
 Stage 3 — Filter jobs against resume variants via Claude
-Stage 4 — Send WhatsApp notifications for matched jobs
+Stage 4 — Send notifications for matched jobs (WhatsApp or Telegram)
 """
 
 import asyncio
@@ -16,20 +16,8 @@ from pipeline.cache import filter_uncached, load_cache, save_cache, update_cache
 from pipeline.cards import scrape_job_cards
 from pipeline.descriptions import fetch_all_descriptions
 from pipeline.filter import filter_jobs
-from pipeline.message import send_messages
+from pipeline.messaging import send_messages
 from pipeline.resume import load_resumes
-
-_NOTIFY_PHONE = "+447592515298"
-
-
-def _format_job_message(job: dict) -> str:
-    return (
-        f"[{job['score']}/10] {job['title']} @ {job['company']}\n"
-        f"{job.get('location', '')} | {job.get('posted', '')}\n"
-        f"Resume: {job['best_resume']}\n"
-        f"Reason: {job['reason']}\n"
-        f"{job['url']}"
-    )
 
 
 async def run_pipeline() -> None:
@@ -71,10 +59,8 @@ async def run_pipeline() -> None:
         key=lambda x: x["score"], reverse=True
     )
 
-    # Stage 4 — notify matched jobs via WhatsApp
-    if matched_jobs:
-        messages = [_format_job_message(j) for j in matched_jobs]
-        send_messages(_NOTIFY_PHONE, messages)
+    # Stage 4 — notify matched jobs (platform chosen in config)
+    send_messages(matched_jobs)
 
     # Persist matched results
     OUTPUT_FILE.parent.mkdir(exist_ok=True)

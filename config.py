@@ -1,4 +1,14 @@
+import os
 from pathlib import Path
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Messaging — where matched jobs get delivered
+MESSAGING_PLATFORM = os.getenv("MESSAGING_PLATFORM", "telegram")  # "telegram" | "whatsapp"
+WHATSAPP_PHONE     = os.getenv("WHATSAPP_PHONE", "+447592515298")
+TELEGRAM_CHAT_ID   = os.getenv("TELEGRAM_CHAT_ID")
 
 # Paths
 ROOT_DIR       = Path(__file__).parent
