@@ -6,9 +6,12 @@ Returns a list of jobs with: id, title, company, location, posted, url.
 
 import asyncio
 import random
+import re
 from playwright.async_api import Page
 
 from config import SEARCH_URL
+
+_REGION_PREFIX_RE = re.compile(r"^(NAMER|EMEA|APAC|LATAM)\s+", re.IGNORECASE)
 
 
 async def _random_delay(min_s: float = 1.5, max_s: float = 3.5) -> None:
@@ -73,6 +76,7 @@ async def _parse_card(card) -> dict | None:
             ".job-card-container__metadata-wrapper li span"
         )
         location = (await location_el.inner_text()).strip() if location_el else "N/A"
+        location = _REGION_PREFIX_RE.sub("", location)
 
         time_el = await card.query_selector("time")
         posted = (

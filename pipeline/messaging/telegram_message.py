@@ -46,8 +46,11 @@ def _format_job(job: dict) -> str:
 
 
 def _job_markup(job: dict) -> InlineKeyboardMarkup:
-    kb = InlineKeyboardMarkup()
-    kb.add(InlineKeyboardButton("View job", url=job["url"]))
+    kb = InlineKeyboardMarkup(row_width=2)
+    kb.add(
+        InlineKeyboardButton("View job", url=job["url"]),
+        InlineKeyboardButton("Applied", callback_data=f"applied:{job['id']}"),
+    )
     return kb
 
 
