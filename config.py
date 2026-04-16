@@ -10,6 +10,10 @@ MESSAGING_PLATFORM = os.getenv("MESSAGING_PLATFORM", "telegram")  # "telegram" |
 WHATSAPP_PHONE     = os.getenv("WHATSAPP_PHONE", "+447592515298")
 TELEGRAM_CHAT_ID   = os.getenv("TELEGRAM_CHAT_ID")
 
+# Notion — applications tracking DB
+NOTION_TOKEN       = os.getenv("NOTION_TOKEN")
+NOTION_DATABASE_ID = os.getenv("NOTION_DATABASE_ID")
+
 # Paths
 ROOT_DIR       = Path(__file__).parent
 SESSION_STATE  = ROOT_DIR / "session" / "state.json"
