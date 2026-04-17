@@ -52,7 +52,7 @@ async def run_pipeline() -> None:
         save_cache(cache)
 
     # Pull all results (new + cached), filter by score threshold for output only
-    _MIN_SCORE = 7
+    _MIN_SCORE = 6
     all_results = [cache[job["id"]] for job in jobs if job["id"] in cache]
     matched_jobs = sorted(
         [j for j in all_results if j["score"] >= _MIN_SCORE],

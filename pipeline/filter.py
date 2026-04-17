@@ -13,7 +13,7 @@ import anthropic
 load_dotenv()
 
 _MODEL    = "claude-haiku-4-5-20251001"
-_MIN_SCORE = 7
+_MIN_SCORE = 6
 
 _SYSTEM_PROMPT = """\
 You are a strict, realistic technical recruiter. You must evaluate job fit based ONLY on \
