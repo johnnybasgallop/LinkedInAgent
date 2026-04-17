@@ -8,6 +8,20 @@ set -e
 STATE_DIR="${STATE_DIR:-/app}"
 mkdir -p "$STATE_DIR/session" "$STATE_DIR/data"
 
+# Bootstrap LinkedIn session on first boot: if state.json is missing/empty
+# and SESSION_STATE_B64 is set, decode it into the volume. After a successful
+# seed, the file lives in the volume and subsequent restarts are no-ops.
+SESSION_FILE="$STATE_DIR/session/state.json"
+if [ ! -s "$SESSION_FILE" ] && [ -n "$SESSION_STATE_B64" ]; then
+    echo "[entrypoint] seeding $SESSION_FILE from SESSION_STATE_B64"
+    if printf '%s' "$SESSION_STATE_B64" | base64 -d > "$SESSION_FILE"; then
+        echo "[entrypoint] seeded $(wc -c < "$SESSION_FILE") bytes"
+    else
+        echo "[entrypoint] failed to decode SESSION_STATE_B64" >&2
+        rm -f "$SESSION_FILE"
+    fi
+fi
+
 python -m pipeline.messaging.telegram_listener &
 LISTENER_PID=$!
 
