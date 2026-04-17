@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Runs scheduler + telegram listener side-by-side. If either dies, the
 # container exits so Railway restarts the whole thing cleanly.
 
