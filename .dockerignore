@@ -1,0 +1,29 @@
+venv/
+node_modules/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+.git/
+.gitignore
+.env
+.env.*
+
+# Runtime state — mounted as volumes at deploy time
+data/
+session/
+.wwebjs_auth/
+
+# Dev artifacts
+debug_screenshot.png
+debug_page.html
+debug.py
+filter_only.py
+*.log
+.DS_Store
+.vscode/
+.idea/
+
+# Docs (not needed in image)
+README.md
+PRD.md

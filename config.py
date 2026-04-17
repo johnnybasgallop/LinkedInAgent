@@ -1,10 +1,16 @@
 import os
+from datetime import time
 from pathlib import Path
 from urllib.parse import quote, urlencode
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Scheduler — pipeline runs every N minutes between START and END (Europe/London)
+SCRAPE_START            = time.fromisoformat(os.getenv("SCRAPE_START", "02:20"))
+SCRAPE_END              = time.fromisoformat(os.getenv("SCRAPE_END",   "22:00"))
+SCRAPE_INTERVAL_MINUTES = int(os.getenv("SCRAPE_INTERVAL_MINUTES", "5"))
 
 # Messaging — where matched jobs get delivered
 MESSAGING_PLATFORM = os.getenv("MESSAGING_PLATFORM", "telegram")  # "telegram" | "whatsapp"

@@ -1,0 +1,21 @@
+services:
+  scraper:
+    build: .
+    command: python scheduler.py
+    env_file: .env
+    volumes:
+      - ./session:/app/session
+      - ./data:/app/data
+    restart: unless-stopped
+
+  listener:
+    build: .
+    command: python -m pipeline.messaging.telegram_listener
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+      # Uncomment for WhatsApp auth persistence if MESSAGING_PLATFORM=whatsapp
+      # - ./.wwebjs_auth:/app/.wwebjs_auth
+    restart: unless-stopped
+    depends_on:
+      - scraper
