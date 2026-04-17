@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from urllib.parse import quote, urlencode
 
 from dotenv import load_dotenv
 
@@ -30,12 +31,72 @@ USER_AGENT = (
     "Chrome/124.0.0.0 Safari/537.36"
 )
 
-# LinkedIn search URL
-# Build your search on LinkedIn (keywords, location, filters), copy the URL, paste here.
-SEARCH_URL = (
-    "https://www.linkedin.com/jobs/search/"
-    "?keywords=%22Software%20Engineer%22%20OR%20%22Fullstack%20Developer%22"
-    "&location=United%20States"
-    "&f_WT=2"     # remote only
-    "&sortBy=DD"  # most recent
-)
+# LinkedIn search — boolean query is built from KEYWORDS (OR'd) and EXCLUDE_KEYWORDS
+# (NOT'd). Everything is wrapped in quotes so LinkedIn treats each term literally.
+
+KEYWORDS = [
+    "backend developer",
+    "fullstack",
+    "full-stack",
+    "backend engineer",
+    "software engineer",
+    "backend software developer",
+    "fullstack engineer",
+    "fullstack software engineer",
+    "fullstack developer",
+    "fullstack software developer",
+    "python",
+    "fastapi",
+    "django",
+    "software developer",
+    "SWE",
+]
+
+EXCLUDE_KEYWORDS = [
+    "lead",
+    "principal",
+    "intern",
+    "graduate",
+    "graduates",
+    "new grad",
+    "new graduate",
+    "post grad",
+    "postgraduate",
+    "campus",
+    "university",
+    "Staff",
+    "c++",
+    "rust",
+    "php",
+    "ruby",
+    "tutor",
+    ".net",
+    "senior",
+]
+
+SEARCH_LOCATION = "United States"
+
+SEARCH_PARAMS = {
+    "f_WT":    "2",     # remote only
+    "f_VJ":    "true",  # has verifications (verified employer)
+    "f_JT":    "F",     # full-time only
+    "sortBy":  "DD",    # most recent
+}
+
+
+def _build_boolean_query(keywords: list[str], exclude: list[str]) -> str:
+    pos = " OR ".join(f'"{k}"' for k in keywords)
+    neg = " ".join(f'NOT "{k}"' for k in exclude)
+    return f"({pos}) {neg}".strip() if neg else f"({pos})"
+
+
+def _build_search_url() -> str:
+    params = {
+        "keywords": _build_boolean_query(KEYWORDS, EXCLUDE_KEYWORDS),
+        "location": SEARCH_LOCATION,
+        **SEARCH_PARAMS,
+    }
+    return "https://www.linkedin.com/jobs/search/?" + urlencode(params, quote_via=quote)
+
+
+SEARCH_URL = _build_search_url()
