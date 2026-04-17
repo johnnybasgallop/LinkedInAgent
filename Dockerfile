@@ -24,5 +24,7 @@ COPY . .
 # Create runtime directories. These get masked by volume mounts in production.
 RUN mkdir -p /app/session /app/data /app/.wwebjs_auth
 
-# Default command — docker-compose overrides this per service.
-CMD ["python", "scheduler.py"]
+# Default command — docker-compose overrides this per service. On Railway
+# (single-service deploy) this runs both the scheduler and the telegram
+# listener side-by-side.
+CMD ["./entrypoint.sh"]

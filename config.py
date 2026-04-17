@@ -21,12 +21,14 @@ TELEGRAM_CHAT_ID   = os.getenv("TELEGRAM_CHAT_ID")
 NOTION_TOKEN       = os.getenv("NOTION_TOKEN")
 NOTION_DATABASE_ID = os.getenv("NOTION_DATABASE_ID")
 
-# Paths
+# Paths. STATE_DIR defaults to the repo root (local dev); on Railway set it
+# to the mount path of the persistent volume (e.g. /app/state).
 ROOT_DIR       = Path(__file__).parent
-SESSION_STATE  = ROOT_DIR / "session" / "state.json"
-OUTPUT_FILE    = ROOT_DIR / "data" / "jobs.json"
-SEEN_JOBS_FILE = ROOT_DIR / "data" / "seen_jobs.json"
-CACHE_FILE     = ROOT_DIR / "data" / "cache.json"
+STATE_DIR      = Path(os.getenv("STATE_DIR", ROOT_DIR))
+SESSION_STATE  = STATE_DIR / "session" / "state.json"
+OUTPUT_FILE    = STATE_DIR / "data" / "jobs.json"
+SEEN_JOBS_FILE = STATE_DIR / "data" / "seen_jobs.json"
+CACHE_FILE     = STATE_DIR / "data" / "cache.json"
 CACHE_TTL_DAYS = 30
 RESUMES_DIR    = ROOT_DIR / "resumes"
 

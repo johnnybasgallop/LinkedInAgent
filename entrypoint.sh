@@ -4,6 +4,10 @@
 
 set -e
 
+# Ensure persistent subdirs exist inside STATE_DIR (defaults to /app).
+STATE_DIR="${STATE_DIR:-/app}"
+mkdir -p "$STATE_DIR/session" "$STATE_DIR/data"
+
 python -m pipeline.messaging.telegram_listener &
 LISTENER_PID=$!
 
