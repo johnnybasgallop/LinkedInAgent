@@ -9,7 +9,7 @@ load_dotenv()
 
 # Scheduler — pipeline runs every N minutes between START and END (Europe/London)
 SCRAPE_START            = time.fromisoformat(os.getenv("SCRAPE_START", "02:20"))
-SCRAPE_END              = time.fromisoformat(os.getenv("SCRAPE_END",   "22:00"))
+SCRAPE_END              = time.fromisoformat(os.getenv("SCRAPE_END",   "23:00"))
 SCRAPE_INTERVAL_MINUTES = int(os.getenv("SCRAPE_INTERVAL_MINUTES", "5"))
 
 # Messaging — where matched jobs get delivered
@@ -82,14 +82,27 @@ EXCLUDE_KEYWORDS = [
     "senior",
 ]
 
-SEARCH_LOCATION = "United States"
-
-SEARCH_PARAMS = {
-    "f_WT":    "2",     # remote only
-    "f_VJ":    "true",  # has verifications (verified employer)
+# Shared across all searches — quality filters applied to every query.
+BASE_SEARCH_PARAMS = {
+    "f_VJ":    "true",  # verified employer
     "f_JT":    "F",     # full-time only
-    "sortBy":  "DD",    # most recent
+    "sortBy":  "DD",    # most recent first
 }
+
+# Each search is a scope: where and what work-type. Keywords/excludes are shared.
+# f_WT codes: 1 = onsite, 2 = remote, 3 = hybrid.
+SEARCHES = [
+    {
+        "name":     "remote_us",
+        "location": "United States",
+        "params":   {"f_WT": "2"},
+    },
+    {
+        "name":     "onsite_hybrid_la",
+        "location": "Los Angeles, California",
+        "params":   {"f_WT": "1,3", "distance": "50"},
+    },
+]
 
 
 def _build_boolean_query(keywords: list[str], exclude: list[str]) -> str:
@@ -98,13 +111,15 @@ def _build_boolean_query(keywords: list[str], exclude: list[str]) -> str:
     return f"({pos}) {neg}".strip() if neg else f"({pos})"
 
 
-def _build_search_url() -> str:
+def _build_search_url(search: dict) -> str:
     params = {
         "keywords": _build_boolean_query(KEYWORDS, EXCLUDE_KEYWORDS),
-        "location": SEARCH_LOCATION,
-        **SEARCH_PARAMS,
+        "location": search["location"],
+        **BASE_SEARCH_PARAMS,
+        **search["params"],
     }
     return "https://www.linkedin.com/jobs/search/?" + urlencode(params, quote_via=quote)
 
 
-SEARCH_URL = _build_search_url()
+# List of (name, url) tuples — consumed by the scraper stage.
+SEARCH_URLS = [(s["name"], _build_search_url(s)) for s in SEARCHES]

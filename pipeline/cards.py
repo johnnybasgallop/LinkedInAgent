@@ -9,7 +9,7 @@ import random
 import re
 from playwright.async_api import Page
 
-from config import SEARCH_URL
+from config import SEARCH_URLS
 
 _REGION_PREFIX_RE = re.compile(r"^(NAMER|EMEA|APAC|LATAM)\s+", re.IGNORECASE)
 
@@ -22,13 +22,10 @@ def _is_logged_in(url: str) -> bool:
     return "login" not in url and "authwall" not in url
 
 
-async def scrape_job_cards(page: Page) -> list[dict]:
-    """
-    Navigate to the configured search URL and scrape all job cards
-    on the first page. Returns a list of job dicts.
-    """
-    print("[Stage 1] Navigating to LinkedIn job search...")
-    await page.goto(SEARCH_URL, wait_until="domcontentloaded")
+async def _scrape_one(page: Page, name: str, url: str) -> list[dict]:
+    """Navigate to a single search URL and scrape its first page of cards."""
+    print(f"[Stage 1] Navigating to search '{name}'...")
+    await page.goto(url, wait_until="domcontentloaded")
     await _random_delay(2, 4)
 
     if not _is_logged_in(page.url):
@@ -38,11 +35,11 @@ async def scrape_job_cards(page: Page) -> list[dict]:
     try:
         await page.wait_for_selector("li[data-occludable-job-id]", timeout=15000)
     except Exception:
-        print("[Stage 1] ERROR: No job cards found. LinkedIn layout may have changed.")
+        print(f"[Stage 1] '{name}': no job cards found (layout change, or zero results).")
         return []
 
     cards = await page.query_selector_all("li[data-occludable-job-id]")
-    print(f"[Stage 1] Found {len(cards)} cards. Scrolling to trigger lazy load...")
+    print(f"[Stage 1] '{name}': found {len(cards)} cards. Scrolling to trigger lazy load...")
 
     for card in cards:
         await card.scroll_into_view_if_needed()
@@ -53,10 +50,25 @@ async def scrape_job_cards(page: Page) -> list[dict]:
     for card in cards:
         job = await _parse_card(card)
         if job:
+            job["search"] = name
             jobs.append(job)
 
-    print(f"[Stage 1] Done — {len(jobs)} jobs scraped.")
+    print(f"[Stage 1] '{name}': {len(jobs)} jobs scraped.")
     return jobs
+
+
+async def scrape_job_cards(page: Page) -> list[dict]:
+    """
+    Run every search in SEARCH_URLS and return a deduped list of jobs.
+    A job that appears in multiple searches keeps its first-seen record.
+    """
+    seen: dict[str, dict] = {}
+    for name, url in SEARCH_URLS:
+        for job in await _scrape_one(page, name, url):
+            seen.setdefault(job["id"], job)
+
+    print(f"[Stage 1] Total: {len(seen)} unique jobs across {len(SEARCH_URLS)} search(es).")
+    return list(seen.values())
 
 
 async def _parse_card(card) -> dict | None:
