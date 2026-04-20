@@ -30,7 +30,7 @@ OUTPUT_FILE    = STATE_DIR / "data" / "jobs.json"
 SEEN_JOBS_FILE = STATE_DIR / "data" / "seen_jobs.json"
 CACHE_FILE     = STATE_DIR / "data" / "cache.json"
 CACHE_TTL_DAYS = 30
-RESUMES_DIR    = ROOT_DIR / "resumes"
+RESUMES_DIR    = ROOT_DIR / "pipeline" / "resumes"
 
 # Browser
 USER_AGENT = (
