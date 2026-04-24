@@ -12,7 +12,7 @@ import anthropic
 
 load_dotenv()
 
-_MODEL    = "claude-haiku-4-5-20251001"
+_MODEL    = "claude-sonnet-4-6"
 _MIN_SCORE = 6
 
 _SYSTEM_PROMPT = """\
