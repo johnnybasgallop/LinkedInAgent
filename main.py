@@ -17,6 +17,7 @@ from pipeline.cache import filter_uncached, load_cache, save_cache, update_cache
 from pipeline.cards import scrape_job_cards
 from pipeline.descriptions import fetch_all_descriptions
 from pipeline.filter import filter_jobs
+from pipeline.applications.notion_sync import fetch_applied_urls
 from pipeline.messaging import send_messages
 from pipeline.resume import load_resumes
 
@@ -55,9 +56,12 @@ async def run_pipeline() -> None:
     # Pull all results (new + cached), filter by score threshold for output only
     _MIN_SCORE = 6
     _RENOTIFY_AFTER_HOURS = 24
+    _BLOCKED_COMPANIES = {"jobright.ai", "jobot"}
     all_results = [cache[job["id"]] for job in jobs if job["id"] in cache]
     matched_jobs = sorted(
-        [j for j in all_results if j["score"] >= _MIN_SCORE],
+        [j for j in all_results
+         if j["score"] >= _MIN_SCORE
+         and (j.get("company") or "").strip().lower() not in _BLOCKED_COMPANIES],
         key=lambda x: x["score"], reverse=True
     )
 
@@ -79,6 +83,16 @@ async def run_pipeline() -> None:
         print(f"[Notify] suppressed {len(suppressed)} matched job(s) notified within last {_RENOTIFY_AFTER_HOURS}h:")
         for j in suppressed:
             print(f"  [{j['score']}/10] {j['title']} @ {j['company']} — last notified {j.get('notified_at')}")
+
+    # Drop jobs already tracked in Notion (already applied)
+    applied_urls = fetch_applied_urls()
+    if applied_urls:
+        already_applied = [j for j in to_send if j.get("url") in applied_urls]
+        to_send = [j for j in to_send if j.get("url") not in applied_urls]
+        if already_applied:
+            print(f"[Notify] skipped {len(already_applied)} job(s) already in Notion:")
+            for j in already_applied:
+                print(f"  [{j['score']}/10] {j['title']} @ {j['company']}")
 
     # Stage 4 — notify matched jobs (platform chosen in config)
     send_messages(to_send)

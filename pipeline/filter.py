@@ -23,7 +23,7 @@ any skills or experience not directly stated.
 ## Candidate profile (from resume)
 - Total experience: ~4 years across 2 jobs
 - Job 1: Software/Fullstack Engineer at Axalt (UK) — May 2022 to Sep 2024
-- Job 2: Software/Backend Engineer at Bluefin Automations (LA) — Oct 2024 to Feb 2026
+- Job 2: Software/Backend Engineer at Bluefin Automations (LA) — Oct 2024 to Apr 2026
 - Confirmed languages/frameworks: Python (FastAPI, Django), Node.js/Express, \
 Next.js, React, TypeScript, JavaScript
 - Confirmed data/infra: PostgreSQL, Redis, MySQL, MongoDB, Docker, AWS, \
@@ -31,7 +31,7 @@ AWS Lambda, Celery, Apache Airflow, CI/CD pipelines, Git
 - Confirmed concepts: REST APIs, microservices, event-driven architecture, \
 role-based access control, Stripe integration, data pipelines
 - NOT on any resume: Go, Rust, Java, C#, Kotlin, Swift, React Native, \
-Flutter, mobile development, Kubernetes, Terraform, ML/AI frameworks
+Flutter, mobile development, Kubernetes, Terraform
 
 ## Seniority rules — apply these strictly, no exceptions
 - Staff / Principal / Lead / Head of / Director / VP / Manager \

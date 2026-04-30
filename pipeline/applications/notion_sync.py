@@ -42,6 +42,37 @@ def _text(content: str) -> list[dict]:
     return [{"type": "text", "text": {"content": content}}]
 
 
+def fetch_applied_urls() -> set[str]:
+    """Return all JobUrl values currently in the Notion applications DB."""
+    if not NOTION_TOKEN or not NOTION_DATABASE_ID:
+        return set()
+
+    notion = Client(auth=NOTION_TOKEN)
+    data_source_id = _resolve_data_source_id(notion)
+    if not data_source_id:
+        return set()
+
+    urls: set[str] = set()
+    start_cursor: str | None = None
+    try:
+        while True:
+            kwargs = {"data_source_id": data_source_id, "page_size": 100}
+            if start_cursor:
+                kwargs["start_cursor"] = start_cursor
+            result = notion.data_sources.query(**kwargs)
+            for page in result.get("results", []):
+                prop = (page.get("properties") or {}).get("JobUrl") or {}
+                url = prop.get("url")
+                if url:
+                    urls.add(url)
+            if not result.get("has_more"):
+                break
+            start_cursor = result.get("next_cursor")
+    except Exception as e:
+        print(f"[Notion] failed to fetch applied URLs: {e}")
+    return urls
+
+
 def _application_exists(notion: Client, url: str) -> bool:
     if not url:
         return False
