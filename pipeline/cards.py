@@ -35,7 +35,17 @@ async def _scrape_one(page: Page, name: str, url: str) -> list[dict]:
     try:
         await page.wait_for_selector("li[data-occludable-job-id]", timeout=15000)
     except Exception:
-        print(f"[Stage 1] '{name}': no job cards found (layout change, or zero results).")
+        from config import STATE_DIR
+        debug_dir = STATE_DIR / "data"
+        debug_dir.mkdir(parents=True, exist_ok=True)
+        png = debug_dir / f"debug_{name}.png"
+        html = debug_dir / f"debug_{name}.html"
+        try:
+            await page.screenshot(path=str(png), full_page=True)
+            html.write_text(await page.content())
+            print(f"[Stage 1] '{name}': no job cards (final URL: {page.url}). Saved {png.name} + {html.name}")
+        except Exception as e:
+            print(f"[Stage 1] '{name}': no job cards, debug capture failed: {e}")
         return []
 
     cards = await page.query_selector_all("li[data-occludable-job-id]")
