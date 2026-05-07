@@ -2,7 +2,7 @@
 scheduler.py — Long-running scheduler for the scrape pipeline.
 
 Runs run_pipeline() every SCRAPE_INTERVAL_MINUTES between SCRAPE_START and
-SCRAPE_END in Europe/London. Designed as the entrypoint of a long-lived
+SCRAPE_END in America/Los_Angeles. Designed as the entrypoint of a long-lived
 worker (e.g. a Railway service).
 """
 
@@ -16,11 +16,15 @@ from zoneinfo import ZoneInfo
 from config import SCRAPE_END, SCRAPE_INTERVAL_MINUTES, SCRAPE_START
 from main import run_pipeline
 
-LONDON = ZoneInfo("Europe/London")
+TZ = ZoneInfo("America/Los_Angeles")
 
 
 def _in_window(now: datetime, start: dtime, end: dtime) -> bool:
-    return start <= now.time() < end
+    t = now.time()
+    if start <= end:
+        return start <= t < end
+    # window wraps past midnight (e.g. 13:30 → 02:00)
+    return t >= start or t < end
 
 
 def _seconds_until_window_opens(now: datetime, start: dtime) -> float:
@@ -33,12 +37,12 @@ def _seconds_until_window_opens(now: datetime, start: dtime) -> float:
 
 def main() -> None:
     print(
-        f"[Scheduler] starting · window {SCRAPE_START}–{SCRAPE_END} Europe/London · "
+        f"[Scheduler] starting · window {SCRAPE_START}–{SCRAPE_END} America/Los_Angeles · "
         f"every {SCRAPE_INTERVAL_MINUTES} min"
     )
 
     while True:
-        now = datetime.now(LONDON)
+        now = datetime.now(TZ)
 
         if _in_window(now, SCRAPE_START, SCRAPE_END):
             next_tick = now + timedelta(minutes=SCRAPE_INTERVAL_MINUTES)
@@ -50,7 +54,7 @@ def main() -> None:
                 print(f"[Scheduler] pipeline crashed: {e}")
                 traceback.print_exc()
 
-            now = datetime.now(LONDON)
+            now = datetime.now(TZ)
             sleep_s = max(0.0, (next_tick - now).total_seconds())
             if sleep_s > 0:
                 print(f"[Scheduler] sleeping {sleep_s:.0f}s until next tick")
