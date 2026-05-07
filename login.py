@@ -33,12 +33,13 @@ async def main():
         # Wait for the user to log in manually
         input("\n  --> Log in to LinkedIn in the browser window, then press Enter here: ")
 
-        # Confirm we're actually logged in before saving
-        current_url = page.url
-        if "feed" in current_url or "jobs" in current_url or "mynetwork" in current_url:
-            print("  Login detected. Saving session...")
+        # Confirm we're actually logged in by checking for the li_at cookie
+        cookies = await context.cookies("https://www.linkedin.com")
+        has_li_at = any(c["name"] == "li_at" and c.get("value") for c in cookies)
+        if has_li_at:
+            print("  Login detected (li_at cookie present). Saving session...")
         else:
-            print(f"  Warning: doesn't look like you're logged in yet (current URL: {current_url})")
+            print("  Warning: no li_at cookie found — you may not be logged in.")
             confirm = input("  Save anyway? (y/n): ").strip().lower()
             if confirm != "y":
                 print("  Aborted. Re-run this script and complete the login before pressing Enter.")
